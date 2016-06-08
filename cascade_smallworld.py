@@ -46,7 +46,7 @@ def cascade_failure(G, capacity) :
     print removed_node
 
 def main() :
-  # 1. ランダムグラフの作成
+  # 1. スモールワールドグラフの作成
   G = make_smallworld_graph()
 
   # 2. 初期の各ノードのbetweennessを計算し、キャパシティとする
