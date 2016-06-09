@@ -45,20 +45,28 @@ def calculate_capacity(G, sink_node, flow = False) :
     print '---flow of nodes---'
     print capacity
   else :
+    alpha = 1.1   #耐久度のパラメータをかける
+    for i in capacity.iterkeys() :
+      capacity[i] *= alpha
     print '---capacity of nodes---'
     print capacity
   return capacity
 
 # 4. 一定数のノードを削除する(はじめは１つsink_node以外を想定)
 def remove_node(G, sink_node) :
-  removed_node = sink_node
-  while removed_node == sink_node :
-    removed_node = random.randint(0, len(G.nodes()) - 1)
-    G.remove_node(removed_node)
+  removed_node = {}
+  for i in range(20) :
+    removed_node[i] = sink_node
+    while removed_node[i] == sink_node :
+      removed_node_i = random.randint(0, len(G.nodes()) - 1)
+      if removed_node_i not in removed_node.values() :
+        removed_node[i] = removed_node_i
+  G.remove_nodes_from(removed_node.values())
   print '---removed node---'
-  print removed_node
+  print removed_node.values()
   return G
 
+# 5. カスケード故障(削除されたノードが0になったら終了)
 def cascade_failure(G, sink_node, capacity) :
   removed_node = [0]
   while len(removed_node) > 0 :
@@ -77,6 +85,12 @@ def cascade_failure(G, sink_node, capacity) :
     print '---removed node---'
     print removed_node
 
+# 6. GCのサイズを表示する
+def show_giant_component_size(G) :
+  giant_component = max(nx.connected_component_subgraphs(G), key=len)
+  print '---giant component size---'
+  print len(giant_component.nodes())
+
 def main() :
   # 1. スモールワールドグラフの作成
   G = make_smallworld_graph()
@@ -87,11 +101,14 @@ def main() :
   # 3. 全ノードのシンクノードに対する最短経路を求め、capacityとする
   capacity = calculate_capacity(G, sink_node)
 
-  # 4. 一定数のノードを削除する(はじめは１つsink_node以外を想定)
+  # 4. 一定数のノードを削除する(はじめは１つで、sink_node以外を想定)
   G = remove_node(G, sink_node)
 
   # 5. カスケード故障(削除されたノードが0になったら終了)
   cascade_failure(G, sink_node, capacity)
+
+  # 6. GCのサイズを表示する
+  show_giant_component_size(G)
 
   #描画
   # nx.draw_networkx(G, pos=nx.spring_layout(G, scale=5.0), node_size=50, with_labels=False)

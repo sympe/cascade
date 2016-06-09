@@ -14,16 +14,25 @@ def make_smallworld_graph() :
 # 2. 初期の各ノードのbetweennessを計算し、capacityとする
 def calculate_capacity(G) :
   capacity = nx.betweenness_centrality(G)
+  alpha = 1.1   #耐久度のパラメータをかける
+  for i in capacity.iterkeys() :
+    capacity[i] *= alpha
   print '---capacity of nodes---'
   print capacity
   return capacity
 
 # 3. 一定数のノードを削除する(はじめは１つ)
 def remove_node(G) :
-  removed_node = random.randint(0, len(G.nodes()) - 1)
-  G.remove_node(removed_node)
+  removed_node = {}
+  for i in range(20) :
+    removed_node[i] = -1
+    while removed_node[i] == -1 :
+      removed_node_i = random.randint(0, len(G.nodes()) - 1)
+      if removed_node_i not in removed_node.values() :
+        removed_node[i] = removed_node_i
+  G.remove_nodes_from(removed_node.values())
   print '---removed node---'
-  print removed_node
+  print removed_node.values()
   return G
 
 # 4. カスケード故障(削除されたノードが0になったら終了)
@@ -45,6 +54,12 @@ def cascade_failure(G, capacity) :
     print '---removed node---'
     print removed_node
 
+# 5. GCのサイズを表示する
+def show_giant_component_size(G) :
+  giant_component = max(nx.connected_component_subgraphs(G), key=len)
+  print '---giant component size---'
+  print len(giant_component.nodes())
+
 def main() :
   # 1. スモールワールドグラフの作成
   G = make_smallworld_graph()
@@ -57,6 +72,9 @@ def main() :
 
   # 4. カスケード故障(削除されたノードが0になったら終了)
   cascade_failure(G, capacity)
+
+  # 5. GCのサイズを表示する
+  show_giant_component_size(G)
 
   #描画
   # nx.draw_networkx(G, pos=nx.spring_layout(G, scale=3.0), node_size=50, with_labels=True)
