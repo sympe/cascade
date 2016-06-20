@@ -6,7 +6,7 @@ import random
 # 1. スモール・ワールドグラフの作成
 def make_smallworld_graph() :
   initial_node_num = 100  #ノード数
-  k = 3                   #エッジ数
+  k = 4                   #エッジ数
   probability = 0.1       #エッジのつなぎかえ確率
   G = nx.watts_strogatz_graph(initial_node_num, k, probability)
   return G
@@ -14,7 +14,7 @@ def make_smallworld_graph() :
 # 2. 初期の各ノードのbetweennessを計算し、capacityとする
 def calculate_capacity(G) :
   capacity = nx.betweenness_centrality(G)
-  alpha = 1.1   #耐久度のパラメータをかける
+  alpha = 5.0   #耐久度のパラメータをかける
   for i in capacity.iterkeys() :
     capacity[i] *= alpha
   print '---capacity of nodes---'
@@ -22,14 +22,25 @@ def calculate_capacity(G) :
   return capacity
 
 # 3. 一定数のノードを削除する(はじめは１つ)
-def remove_node(G) :
+def remove_node_random(G) :
   removed_node = {}
-  for i in range(20) :
+  for i in range(1) :
     removed_node[i] = -1
     while removed_node[i] == -1 :
       removed_node_i = random.randint(0, len(G.nodes()) - 1)
       if removed_node_i not in removed_node.values() :
         removed_node[i] = removed_node_i
+  G.remove_nodes_from(removed_node.values())
+  print '---removed node---'
+  print removed_node.values()
+  return G
+
+# 負荷の高いノードを故障
+def remove_node_target(G, capacity) :
+  removed_node = {}
+  capacity = sorted(capacity.items(), key = lambda x: x[1], reverse = True)
+  for i in range(1) :
+    removed_node[i] = capacity[i][0]
   G.remove_nodes_from(removed_node.values())
   print '---removed node---'
   print removed_node.values()
@@ -52,6 +63,8 @@ def cascade_failure(G, capacity) :
         G.remove_node(i)
         removed_node.append(i)
     print '---removed node---'
+    if len(removed_node) > 0 :
+      print 'cascade!'
     print removed_node
 
 # 5. GCのサイズを表示する
@@ -68,7 +81,8 @@ def main() :
   capacity = calculate_capacity(G)
 
   # 3. 一定数のノードを削除する
-  G = remove_node(G)
+  # G = remove_node_random(G)  # ランダムな故障
+  G = remove_node_target(G, capacity)    # 負荷の高いノードを故障
 
   # 4. カスケード故障(削除されたノードが0になったら終了)
   cascade_failure(G, capacity)

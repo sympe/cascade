@@ -6,13 +6,15 @@ import random
 # 1. スモール・ワールドグラフの作成
 def make_smallworld_graph() :
   initial_node_num = 100  #ノード数
-  k = 3                   #エッジ数
+  k = 4                   #エッジ数
   probability = 0.1       #エッジのつなぎかえ確率
   G = nx.watts_strogatz_graph(initial_node_num, k, probability)
   return G
 
 # 2. シンクノード選択(betweenness最大のノードをシンクノードとする)
+initial_betweenness = {}
 def select_sinknode(G) :
+  global initial_betweenness
   initial_betweenness = nx.betweenness_centrality(G)
   sink_node = max((v,k) for k,v in initial_betweenness.iteritems())[1]
   print '---sink node---'
@@ -45,7 +47,7 @@ def calculate_capacity(G, sink_node, flow = False) :
     print '---flow of nodes---'
     print capacity
   else :
-    alpha = 1.1   #耐久度のパラメータをかける
+    alpha = 10.0   #耐久度のパラメータ
     for i in capacity.iterkeys() :
       capacity[i] *= alpha
     print '---capacity of nodes---'
@@ -53,14 +55,42 @@ def calculate_capacity(G, sink_node, flow = False) :
   return capacity
 
 # 4. 一定数のノードを削除する(はじめは１つsink_node以外を想定)
-def remove_node(G, sink_node) :
+# ランダムな故障
+def remove_node_random(G, sink_node) :
   removed_node = {}
-  for i in range(20) :
+  for i in range(1) :
     removed_node[i] = sink_node
     while removed_node[i] == sink_node :
       removed_node_i = random.randint(0, len(G.nodes()) - 1)
       if removed_node_i not in removed_node.values() :
         removed_node[i] = removed_node_i
+  G.remove_nodes_from(removed_node.values())
+  print '---removed node---'
+  print removed_node.values()
+  return G
+
+# 負荷の高いノードを故障
+def remove_node_high_betweenness(G, capacity) :
+  removed_node = {}
+  # capacity = sorted(initial_betweenness.items(), key = lambda x: x[1], reverse = True)
+  capacity = sorted(capacity.items(), key = lambda x: x[1], reverse = True)
+  for i in range(1) :
+    removed_node[i] = capacity[i][0]
+  G.remove_nodes_from(removed_node.values())
+  print '---removed node---'
+  print removed_node.values()
+  return G
+
+# 隣接するノードを攻撃
+def remove_node_neighbors(G, sink_node, capacity) :
+  neighbors = G.neighbors(sink_node)
+  neighbors_capacity = {}
+  for i in neighbors :
+    neighbors_capacity[i] = capacity[i]
+  capacity = sorted(neighbors_capacity.items(), key = lambda x: x[1], reverse = True)
+  removed_node = {}
+  for i in range(1) :
+    removed_node[i] = capacity[i][0]
   G.remove_nodes_from(removed_node.values())
   print '---removed node---'
   print removed_node.values()
@@ -83,6 +113,8 @@ def cascade_failure(G, sink_node, capacity) :
         G.remove_node(i)
         removed_node.append(i)
     print '---removed node---'
+    if len(removed_node) > 0 :
+      print 'cascade!'
     print removed_node
 
 # 6. GCのサイズを表示する
@@ -90,6 +122,18 @@ def show_giant_component_size(G) :
   giant_component = max(nx.connected_component_subgraphs(G), key=len)
   print '---giant component size---'
   print len(giant_component.nodes())
+
+# 7. シンクノードのまでの経路が何本存在するか表示する
+def show_has_path_to_sinknode(G, sink_node) :
+  has_path_num = 0
+  for i in G.nodes() :
+    if i == sink_node :
+      continue
+    if nx.has_path(G, i, sink_node) :
+      has_path_num += 1
+  print '---nodes which have path to sinknode---'
+  print has_path_num
+
 
 def main() :
   # 1. スモールワールドグラフの作成
@@ -102,7 +146,9 @@ def main() :
   capacity = calculate_capacity(G, sink_node)
 
   # 4. 一定数のノードを削除する(はじめは１つで、sink_node以外を想定)
-  G = remove_node(G, sink_node)
+  # G = remove_node_random(G, sink_node)                # ランダムな故障
+  G = remove_node_high_betweenness(G, capacity)       # 負荷の高いノードを故障
+  # G =  remove_node_neighbors(G, sink_node, capacity)  # 隣接するノードを攻撃
 
   # 5. カスケード故障(削除されたノードが0になったら終了)
   cascade_failure(G, sink_node, capacity)
@@ -110,8 +156,14 @@ def main() :
   # 6. GCのサイズを表示する
   show_giant_component_size(G)
 
+  # 7. シンクノードのまでの経路が何本存在するか表示する
+  show_has_path_to_sinknode(G, sink_node)
+
   #描画
-  # nx.draw_networkx(G, pos=nx.spring_layout(G, scale=5.0), node_size=50, with_labels=False)
+  # pos = nx.spring_layout(G, scale=50.0)
+  # nx.draw_networkx_nodes(G, pos, node_size=50)
+  # nx.draw_networkx_edges(G, pos, width=1)
+  # nx.draw_networkx_labels(G, pos, font_size=8)
   # plt.show()
 
 if __name__ == '__main__' :
