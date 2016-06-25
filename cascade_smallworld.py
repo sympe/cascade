@@ -6,7 +6,7 @@ import random
 # 1. スモール・ワールドグラフの作成
 def make_smallworld_graph() :
   initial_node_num = 100  #ノード数
-  k = 4                   #エッジ数
+  k = 10                  #エッジ数
   probability = 0.1       #エッジのつなぎかえ確率
   G = nx.watts_strogatz_graph(initial_node_num, k, probability)
   return G
@@ -14,7 +14,7 @@ def make_smallworld_graph() :
 # 2. 初期の各ノードのbetweennessを計算し、capacityとする
 def calculate_capacity(G) :
   capacity = nx.betweenness_centrality(G)
-  alpha = 5.0   #耐久度のパラメータをかける
+  alpha = 1.5   #耐久度のパラメータをかける
   for i in capacity.iterkeys() :
     capacity[i] *= alpha
   print '---capacity of nodes---'
@@ -72,6 +72,7 @@ def show_giant_component_size(G) :
   giant_component = max(nx.connected_component_subgraphs(G), key=len)
   print '---giant component size---'
   print len(giant_component.nodes())
+  return len(giant_component.nodes())
 
 def main() :
   # 1. スモールワールドグラフの作成
@@ -88,7 +89,11 @@ def main() :
   cascade_failure(G, capacity)
 
   # 5. GCのサイズを表示する
-  show_giant_component_size(G)
+  GC_size = show_giant_component_size(G)
+
+  f = open('../result/sink_random/alpha15_deg10.csv', 'a')
+  f.write(str(100 - len(G.nodes())) + ',' + str(GC_size) + "\n")
+  f.close()
 
   #描画
   # nx.draw_networkx(G, pos=nx.spring_layout(G, scale=3.0), node_size=50, with_labels=True)
