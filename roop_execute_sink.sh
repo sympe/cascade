@@ -1,5 +1,5 @@
 #!/bin/sh
-for i in `seq 1 100`
+for i in `seq 1 33`
 do
-  python cascade_smallworld_sink.py $1
+  python sensormodel/cascadesink.py $1
 done

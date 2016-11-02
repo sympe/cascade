@@ -6,10 +6,12 @@ import random
 def bet(G) :
   initial_betweenness = {}
   initial_betweenness = nx.betweenness_centrality(G)
+  print '---betweenness centrality---'
+  print initial_betweenness
   sinknode = max((v,k) for k,v in initial_betweenness.iteritems())[1]
   print '---sink node---'
   print sinknode
-  return sinknode
+  return initial_betweenness[sinknode]
 
 # ランダムにシンクノード選択
 def rand(G) :

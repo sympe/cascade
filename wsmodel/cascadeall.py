@@ -8,7 +8,7 @@ import util
 # 1. スモール・ワールドグラフの作成
 def make_smallworld_graph() :
   initial_node_num = 100  #ノード数
-  k = 4                  #エッジ数
+  k = 4                   #エッジ数
   probability = 0.1       #エッジのつなぎかえ確率
   G = nx.watts_strogatz_graph(initial_node_num, k, probability)
   return G
